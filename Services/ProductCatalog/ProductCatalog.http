@@ -1,0 +1,39 @@
+ @ProductCatalog_HostAddress = https://localhost:7043/api/ProductCatalog
+
+GET {{ProductCatalog_HostAddress}}/
+Accept: application/json
+
+###
+
+
+GET {{ProductCatalog_HostAddress}}/5
+Accept: application/json
+
+###
+
+POST {{ProductCatalog_HostAddress}}
+Content-Type: application/json
+{
+  "id": 6,
+  "productName": "Puma",
+  "productDescription": "Puma shoes made from China",
+  "price": 29.30,
+  "productImage": "puma.png"
+}
+
+###
+
+PUT {{ProductCatalog_HostAddress}}/6
+Content-Type: application/json
+{
+  "id": 6,
+  "productName": "Puma Snikers",
+  "productDescription": "Puma shoes made from China",
+  "price": 29.30,
+  "productImage": "puma.png"
+}
+
+###
+DELETE {{ProductCatalog_HostAddress}}/6
+Accept: application/json
+
