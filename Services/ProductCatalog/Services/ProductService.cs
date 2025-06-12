@@ -1,6 +1,9 @@
-﻿namespace ProductCatalog.Services
+﻿
+using EventMessaging.Events;
+
+namespace ProductCatalog.Services
 {
-    public class ProductService(ProductDbContext context)
+    public class ProductService(ProductDbContext context, IBus bus )
     {
         private readonly ProductDbContext _context = context;
         public async Task<IEnumerable<Product>> GetProductsAsync()
@@ -16,8 +19,22 @@
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
         }
-        public async Task UpdateProductAsync(Product product)
+        public async Task  UpdateProductAsync(Product product, decimal oldprice, int productId)
         {
+
+            if(product.Price != oldprice)
+            {
+                var priceChangedEvent = new PriceChangeIntegrationEvent
+                {
+                    ProductId = productId,
+                    ProductDescription = product.ProductDescription,
+                    ProductImage = product.ProductImage,
+                    ProductName = product.ProductName,
+                    Price = product.Price
+                };
+                await bus.Publish(priceChangedEvent);
+            }
+           
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
         }

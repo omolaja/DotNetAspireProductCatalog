@@ -41,16 +41,16 @@ namespace ProductCatalog.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] Product product)
         {
-            if (id != product.Id)
-            {
-                return BadRequest("Product ID mismatch");
-            }
+            //if (id != product.Id)
+            //{
+            //    return BadRequest("Product ID mismatch");
+            //}
             var existingProduct = await _productService.GetProductByIdAsync(id);
             if (existingProduct == null)
             {
                 return NotFound();
             }
-            await _productService.UpdateProductAsync(product);
+            await _productService.UpdateProductAsync(product, existingProduct.Price, id);
             return NoContent();
         }
 

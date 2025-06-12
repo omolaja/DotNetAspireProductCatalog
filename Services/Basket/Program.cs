@@ -1,5 +1,7 @@
 
 using Basket.ApiClient;
+using System.Reflection;
+using EventMessaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.AddRedisDistributedCache(connectionName: "cache");
 builder.Services.AddScoped<BasketService>();
+builder.Services.AddTransitWithAssemblies(Assembly.GetExecutingAssembly());
 builder.Services.AddHttpClient<ProductCatalogClient>(builder =>
 {
     builder.BaseAddress = new Uri("https+http://productcatalog/");

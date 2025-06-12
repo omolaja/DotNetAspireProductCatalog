@@ -1,10 +1,11 @@
 ﻿
 using Basket.ApiClient;
 using Microsoft.AspNetCore.Http.Features;
+using StackExchange.Redis;
 
 namespace Basket.Services
 {
-    public class BasketService(IDistributedCache cache, ProductCatalogClient productCatalogClient)
+    public class BasketService(IDistributedCache cache, ProductCatalogClient productCatalogClient, IConnectionMultiplexer redis)
     {
         public async Task<ShoppingCart?> GetBasket(string userId)
         {
@@ -76,5 +77,24 @@ namespace Basket.Services
         {
             await cache.RemoveAsync(userId);
         }
+
+        internal async Task UpdateProductPriceInAllBasketsAsync(int productId, decimal price)
+        {
+            var basket = await GetBasket("Dipo");//Testiing logic, replace with actual userId logic
+            var basketItem = basket?.Items.FirstOrDefault(i => i.ProductId == productId);
+            if (basketItem != null)
+            {
+                basketItem.Price = price;
+                await cache.SetStringAsync(basket.UserId, JsonSerializer.Serialize(basket));
+
+            }
+            else
+            {
+                throw new Exception($"Product with ID {productId} not found in the basket.");
+            }
+        }
+
+       
+
     }
 }
