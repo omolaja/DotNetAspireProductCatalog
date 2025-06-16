@@ -38,19 +38,17 @@ namespace ProductCatalog.Controllers
             return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromBody] Product product)
+        [HttpPut]
+        public async Task<IActionResult> UpdateProduct([FromBody] Product product)
         {
-            //if (id != product.Id)
-            //{
-            //    return BadRequest("Product ID mismatch");
-            //}
-            var existingProduct = await _productService.GetProductByIdAsync(id);
+           
+            var existingProduct = await _productService.GetProductByIdAsync(product.Id);
             if (existingProduct == null)
             {
                 return NotFound();
             }
-            await _productService.UpdateProductAsync(product, existingProduct.Price, id);
+
+            await _productService.UpdateProductAsync(product, existingProduct);
             return NoContent();
         }
 

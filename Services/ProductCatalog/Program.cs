@@ -10,6 +10,7 @@ builder.AddServiceDefaults();
 
 builder.AddNpgsqlDbContext<ProductDbContext>(connectionName: "ProductCatalogs");
 builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<Product>();
 builder.Services.AddTransitWithAssemblies(Assembly.GetExecutingAssembly());
 
 builder.Services.AddControllers();

@@ -9,14 +9,12 @@ namespace Basket.Services
     {
         public async Task<ShoppingCart?> GetBasket(string userId)
         {
-            var basket = await cache.GetStringAsync(userId);
+            var key = $"basket:{userId}";
+            var basket = await cache.GetStringAsync(key);
             return string.IsNullOrEmpty(basket) ? null : JsonSerializer.Deserialize<ShoppingCart>(basket);
         }
 
-        //public async Task UpdateBasket(ShoppingCart basket)
-        //{
-        //    await cache.SetStringAsync(basket.UserId, JsonSerializer.Serialize<ShoppingCart>(basket));
-        //}
+       
         public async Task UpdateBasket(ShoppingCart incomingCart)
         {
 
@@ -32,13 +30,14 @@ namespace Basket.Services
                 }
             }
 
-            var existingCartJson = await cache.GetStringAsync(incomingCart.UserId);
+            var key = $"basket:{incomingCart.UserId}";
+            var existingCartJson = await cache.GetStringAsync(key);
 
             ShoppingCart cart;
 
             if (string.IsNullOrEmpty(existingCartJson))
             {
-                // No cart exists, store the new one
+               
                 cart = incomingCart;
             }
             else
@@ -49,14 +48,14 @@ namespace Basket.Services
                 {
                     var existingItem = cart.Items.FirstOrDefault(i =>
                         i.ProductId == newItem.ProductId &&
-                        i.Color == newItem.Color // add more matching logic if needed
+                        i.Color == newItem.Color 
                     );
 
                     if (existingItem != null)
                     {
-                        // Update quantity and timestamp
-                        existingItem.Quantity += newItem.Quantity; // or += if you want to accumulate
-                        existingItem.Price = newItem.Price; // optionally update price
+                        // Update item
+                        existingItem.Quantity += newItem.Quantity; 
+                        existingItem.Price = newItem.Price;
                         existingItem.UpdatedAt = DateTime.UtcNow;
                     }
                     else
@@ -70,7 +69,8 @@ namespace Basket.Services
             }
 
             var updatedCartJson = JsonSerializer.Serialize(cart);
-            await cache.SetStringAsync(cart.UserId, updatedCartJson);
+            key = $"basket:{cart.UserId}";
+            await cache.SetStringAsync(key, updatedCartJson);
         }
 
         public async Task DeleteBasket(string userId)
@@ -80,21 +80,25 @@ namespace Basket.Services
 
         internal async Task UpdateProductPriceInAllBasketsAsync(int productId, decimal price)
         {
-            var basket = await GetBasket("Dipo");//Testiing logic, replace with actual userId logic
-            var basketItem = basket?.Items.FirstOrDefault(i => i.ProductId == productId);
-            if (basketItem != null)
+            var db = redis.GetDatabase();
+            var server = redis.GetServer(redis.GetEndPoints().First());
+            await foreach (var key in server.KeysAsync(pattern: "*"))
             {
-                basketItem.Price = price;
-                await cache.SetStringAsync(basket.UserId, JsonSerializer.Serialize(basket));
+                string keyString = key.ToString() ?? string.Empty;
+                var basket = await GetBasket(keyString.Replace("basket:",""));
+                var basketItem = basket?.Items.FirstOrDefault(i => i.ProductId == productId);
+                if (basketItem != null)
+                {
+                    basketItem.Price = price;
+                    
+                    await cache.SetStringAsync(keyString, JsonSerializer.Serialize(basket));
 
-            }
-            else
-            {
-                throw new Exception($"Product with ID {productId} not found in the basket.");
+                }
+                else
+                {
+                    throw new Exception($"Product with ID {productId} not found in the basket.");
+                }
             }
         }
-
-       
-
     }
 }

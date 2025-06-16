@@ -6,6 +6,7 @@ namespace ProductCatalog.Services
     public class ProductService(ProductDbContext context, IBus bus )
     {
         private readonly ProductDbContext _context = context;
+        private readonly IBus _bus = bus;
         public async Task<IEnumerable<Product>> GetProductsAsync()
         {
             return await _context.Products.ToListAsync();
@@ -19,23 +20,28 @@ namespace ProductCatalog.Services
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
         }
-        public async Task  UpdateProductAsync(Product product, decimal oldprice, int productId)
+        public async Task  UpdateProductAsync(Product product, Product existingProduct)
         {
 
-            if(product.Price != oldprice)
+
+            if (product.Price != existingProduct.Price)
             {
                 var priceChangedEvent = new PriceChangeIntegrationEvent
                 {
-                    ProductId = productId,
+                    ProductId = existingProduct.Id,
                     ProductDescription = product.ProductDescription,
                     ProductImage = product.ProductImage,
                     ProductName = product.ProductName,
                     Price = product.Price
                 };
-                await bus.Publish(priceChangedEvent);
+                await _bus.Publish(priceChangedEvent);
             }
-           
-            _context.Products.Update(product);
+            existingProduct.Price = product.Price;
+            existingProduct.ProductName = product.ProductName;
+            existingProduct.ProductDescription = product.ProductDescription;
+            existingProduct.ProductImage = product.ProductImage;
+
+            _context.Products.Update(existingProduct);
             await _context.SaveChangesAsync();
         }
         public async Task DeleteProductAsync(int id)
